@@ -16,7 +16,12 @@ GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 GITHUB_API_URL = "https://api.github.com"
 
 def get_jwt():
-    private_key = base64.b64decode(GITHUB_PRIVATE_KEY)
+    # Try to robustly load the private key from .env
+    private_key = GITHUB_PRIVATE_KEY
+    if '\\n' in private_key:
+        private_key = private_key.replace('\\n', '\n').strip()
+    else:
+        private_key = private_key.strip()
     payload = {
         "iat": int(time.time()) - 60,
         "exp": int(time.time()) + (10 * 60),
