@@ -1,4 +1,3 @@
-# Abstraction over OpenAI/Anthropic API
 import os
 import httpx
 from dotenv import load_dotenv
@@ -34,7 +33,8 @@ async def review_with_openai(diff_hunk):
         "max_tokens": 512,
         "temperature": 0.2
     }
-    async with httpx.AsyncClient() as client:
+    timeout = httpx.Timeout(60.0)  # 60 seconds
+    async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(url, headers=headers, json=data)
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
@@ -54,7 +54,8 @@ async def review_with_anthropic(diff_hunk):
             {"role": "user", "content": f"Review this code diff:\n{diff_hunk}"}
         ]
     }
-    async with httpx.AsyncClient() as client:
+    timeout = httpx.Timeout(60.0)  # 60 seconds
+    async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(url, headers=headers, json=data)
         resp.raise_for_status()
         return resp.json()["content"]
