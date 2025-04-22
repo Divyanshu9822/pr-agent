@@ -16,6 +16,8 @@ async def review_pull_request(payload):
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
     }
+    # Get the latest commit SHA for the PR (required for review comments)
+    commit_id = pr["head"]["sha"]
     # Get list of changed files
     files_url = pr["url"] + "/files"
     async with httpx.AsyncClient() as client:
@@ -32,9 +34,9 @@ async def review_pull_request(payload):
             if not review or not review.strip():
                 continue
             # Post comment if LLM found issues
-            await post_review_comment(repo, pr_number, filename, patch, review, headers)
+            await post_review_comment(repo, pr_number, filename, patch, review, headers, commit_id)
 
-async def post_review_comment(repo, pr_number, filename, patch, review, headers):
+async def post_review_comment(repo, pr_number, filename, patch, review, headers, commit_id):
     # Find the line number for the comment (first line of the patch)
     # For simplicity, we'll comment at the first changed line
     import re
@@ -52,7 +54,8 @@ async def post_review_comment(repo, pr_number, filename, patch, review, headers)
         "path": filename,
         "body": comment_body,
         "side": "RIGHT",
-        "line": start_line
+        "line": start_line,
+        "commit_id": commit_id
     }
     url = f"{GITHUB_API_URL}/repos/{repo}/pulls/{pr_number}/comments"
     async with httpx.AsyncClient() as client:
